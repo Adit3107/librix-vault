@@ -1,24 +1,75 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getBooks, getDomains } from '@/lib/dummyData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  domain: string;
+  isbn: string;
+  quantity: number;
+  available: number;
+  created_at: string;
+  updated_at: string;
+}
 
 const BookManagement = () => {
-  const [books] = useState(getBooks());
-  const [domains] = useState(getDomains());
+  const [books, setBooks] = useState<Book[]>([]);
+  const [domains, setDomains] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDomain, setSelectedDomain] = useState<string>('all');
 
-  const filteredBooks = books.filter((book: any) => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [booksData, domainsData] = await Promise.all([
+        getBooks(),
+        getDomains()
+      ]);
+      setBooks(booksData);
+      setDomains(domainsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast.error('Failed to load books and domains');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredBooks = books.filter((book) => {
     const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          book.author.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDomain = selectedDomain === 'all' || book.domain === selectedDomain;
     return matchesSearch && matchesDomain;
   });
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Book Inventory</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading books...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -42,7 +93,7 @@ const BookManagement = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Domains</SelectItem>
-              {domains.map((domain: string) => (
+              {domains.map((domain) => (
                 <SelectItem key={domain} value={domain}>
                   {domain}
                 </SelectItem>
@@ -63,22 +114,30 @@ const BookManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBooks.map((book: any) => (
-              <TableRow key={book.id}>
-                <TableCell className="font-medium">{book.title}</TableCell>
-                <TableCell>{book.author}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{book.domain}</Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{book.isbn}</TableCell>
-                <TableCell>{book.quantity}</TableCell>
-                <TableCell>
-                  <Badge variant={book.available > 0 ? 'default' : 'destructive'}>
-                    {book.available}
-                  </Badge>
+            {filteredBooks.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No books found
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredBooks.map((book) => (
+                <TableRow key={book.id}>
+                  <TableCell className="font-medium">{book.title}</TableCell>
+                  <TableCell>{book.author}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{book.domain}</Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{book.isbn}</TableCell>
+                  <TableCell>{book.quantity}</TableCell>
+                  <TableCell>
+                    <Badge variant={book.available > 0 ? 'default' : 'destructive'}>
+                      {book.available}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </CardContent>

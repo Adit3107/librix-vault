@@ -116,6 +116,13 @@ export const createUser = async (userData: Omit<User, 'id' | 'created_at' | 'upd
   });
 };
 
+export const registerUser = async (userData: Omit<User, 'id' | 'isAdmin' | 'created_at' | 'updated_at'>): Promise<User> => {
+  return apiCall('/users/register', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
+};
+
 export const updateUser = async (id: string, userData: Partial<User>): Promise<User> => {
   return apiCall(`/users/${id}`, {
     method: 'PUT',
@@ -213,8 +220,9 @@ export const initializeDummyData = async (): Promise<void> => {
   try {
     // Try to get domains to test API connectivity
     await getDomains();
+    console.log('✅ Connected to backend API');
   } catch (error) {
-    console.warn('API not available, using fallback data');
+    console.warn('⚠️ Backend API not available, using localStorage fallback');
     // Fallback to localStorage if API is not available
     if (!localStorage.getItem('library_initialized')) {
       const domains = ['DBMS', 'Operating Systems', 'Computer Networks', 'Algorithms', 'Data Structures'];

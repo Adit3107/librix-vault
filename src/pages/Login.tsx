@@ -21,7 +21,7 @@ const Login = () => {
       const success = await login(email, password);
       if (success) {
         toast.success('Login successful!');
-        navigate('/');
+        navigate('/dashboard');
       } else {
         toast.error('Invalid credentials. Please check your email and password.');
       }
@@ -84,6 +84,19 @@ const Login = () => {
             <p className="font-semibold">Demo Credentials:</p>
             <p>Admin: admin@library.com / admin123</p>
             <p>Student: rahul@student.edu / password123</p>
+          </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
+              <Button
+                variant="link"
+                className="p-0 h-auto font-normal text-primary hover:underline"
+                onClick={() => navigate('/register')}
+              >
+                Register here
+              </Button>
+            </p>
           </div>
         </CardContent>
       </Card>

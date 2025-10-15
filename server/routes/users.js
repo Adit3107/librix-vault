@@ -46,6 +46,58 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// Create new user (public registration - no admin required)
+router.post('/register', [
+  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('email').isEmail().withMessage('Please provide a valid email'),
+  body('phone').optional().isMobilePhone().withMessage('Please provide a valid phone number'),
+  body('department').trim().isLength({ min: 2 }).withMessage('Department must be at least 2 characters'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    // Check validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { name, email, phone, department, password } = req.body;
+
+    // Check if email already exists
+    const [existingUsers] = await pool.execute(
+      'SELECT id FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Generate user ID
+    const userId = `user-${Date.now()}`;
+
+    // Insert new user (always set as non-admin for public registration)
+    await pool.execute(
+      'INSERT INTO users (id, name, email, phone, department, password, isAdmin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, name, email, phone || null, department, hashedPassword, false]
+    );
+
+    // Return created user (without password)
+    const [newUser] = await pool.execute(
+      'SELECT id, name, email, phone, department, isAdmin, created_at, updated_at FROM users WHERE id = ?',
+      [userId]
+    );
+
+    res.status(201).json(newUser[0]);
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
 // Create new user (admin only)
 router.post('/', authenticateToken, requireAdmin, [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
