@@ -108,104 +108,132 @@ const UserRecords = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading user records...</span>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg sm:text-xl">User Records</CardTitle>
+          <p className="text-sm text-muted-foreground">Manage user accounts and their issued books</p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-center justify-center py-8 gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-sm text-muted-foreground">Loading user records...</span>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {users.map((user) => {
-          const userBooks = getUserIssuedBooks(user.id);
-          const totalFine = getTotalFine(user.id);
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg sm:text-xl">User Records</CardTitle>
+        <p className="text-sm text-muted-foreground">Manage user accounts and their issued books</p>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 p-6 pt-0">
+          {users.map((user) => {
+            const userBooks = getUserIssuedBooks(user.id);
+            const totalFine = getTotalFine(user.id);
 
-          return (
-            <Card key={user.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedUser(user)}>
-              <CardHeader>
-                <CardTitle className="text-lg">{user.name}</CardTitle>
-                <CardDescription>{user.department}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Books Issued:</span>
-                  <Badge variant={userBooks.length > 0 ? 'default' : 'secondary'}>
-                    {userBooks.length}
-                  </Badge>
-                </div>
-                {totalFine > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Fine:</span>
-                    <Badge variant="destructive">₹{totalFine}</Badge>
+            return (
+              <Card key={user.id} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedUser(user)}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg line-clamp-1" title={user.name}>
+                    {user.name}
+                  </CardTitle>
+                  <CardDescription className="text-sm">{user.department}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 pt-0">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Books Issued:</span>
+                    <Badge variant={userBooks.length > 0 ? 'default' : 'secondary'}>
+                      {userBooks.length}
+                    </Badge>
                   </div>
-                )}
-                <p className="text-xs text-muted-foreground">{user.email}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  {totalFine > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Fine:</span>
+                      <Badge variant="destructive">₹{totalFine}</Badge>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground truncate" title={user.email}>
+                    {user.email}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </CardContent>
 
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{selectedUser?.name} - Issued Books</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">
+              {selectedUser?.name} - Issued Books
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             {getUserIssuedBooks(selectedUser?.id || '').length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No books issued</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Book Title</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Issue Date</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Fine</TableHead>
-                    <TableHead>Return</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {getUserIssuedBooks(selectedUser?.id || '').map((issued) => {
-                    const fine = calculateFine(issued.due_date, issued.return_date);
-                    const isOverdue = fine > 0 && !issued.return_date;
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px]">Book Title</TableHead>
+                      <TableHead className="min-w-[60px]">Qty</TableHead>
+                      <TableHead className="min-w-[100px]">Issue Date</TableHead>
+                      <TableHead className="min-w-[100px]">Due Date</TableHead>
+                      <TableHead className="min-w-[80px]">Fine</TableHead>
+                      <TableHead className="min-w-[100px]">Return</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getUserIssuedBooks(selectedUser?.id || '').map((issued) => {
+                      const fine = calculateFine(issued.due_date, issued.return_date);
+                      const isOverdue = fine > 0 && !issued.return_date;
 
-                    return (
-                      <TableRow key={issued.id}>
-                        <TableCell className="font-medium">{issued.book_title}</TableCell>
-                        <TableCell>{issued.quantity}</TableCell>
-                        <TableCell>{new Date(issued.issue_date).toLocaleDateString()}</TableCell>
-                        <TableCell className={isOverdue ? 'text-destructive font-medium' : ''}>
-                          {new Date(issued.due_date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          {fine > 0 && (
-                            <Badge variant="destructive">₹{fine}</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={!!issued.return_date}
-                            disabled={!!issued.return_date || returning === issued.id}
-                            onCheckedChange={() => handleReturn(issued.id)}
-                          />
-                          {returning === issued.id && (
-                            <Loader2 className="ml-2 h-4 w-4 animate-spin inline" />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                      return (
+                        <TableRow key={issued.id}>
+                          <TableCell className="font-medium max-w-[200px] truncate" title={issued.book_title}>
+                            {issued.book_title}
+                          </TableCell>
+                          <TableCell>{issued.quantity}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {new Date(issued.issue_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className={`whitespace-nowrap ${isOverdue ? 'text-destructive font-medium' : ''}`}>
+                            {new Date(issued.due_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {fine > 0 && (
+                              <Badge variant="destructive">₹{fine}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Switch
+                                checked={!!issued.return_date}
+                                disabled={!!issued.return_date || returning === issued.id}
+                                onCheckedChange={() => handleReturn(issued.id)}
+                              />
+                              {returning === issued.id && (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </Card>
   );
 };
 
