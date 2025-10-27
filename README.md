@@ -24,6 +24,6 @@ DB_PASSWORD=Kazutora@07
 JWT_SECRET=your-super-secret-jwt-key-here
 JWT_EXPIRE=7d
 
-# CORS Configuration
+ CORS Configuration
 FRONTEND_URL=http://localhost:8080
 
